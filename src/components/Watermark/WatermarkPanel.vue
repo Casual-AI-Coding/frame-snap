@@ -1,43 +1,69 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useEditorStore } from '@/stores'
-import type { WatermarkPosition } from '@/types'
+import { ref } from "vue";
+import { useEditorStore } from "@/stores";
+import type { WatermarkPosition } from "@/types";
 
-const editorStore = useEditorStore()
+const editorStore = useEditorStore();
 
-const watermarkText = ref('© FrameSnap')
-const watermarkPosition = ref<WatermarkPosition>('bottomRight')
-const fontSize = ref(18)
-const textColor = ref('#ffffff')
-const opacity = ref(80)
+const watermarkText = ref("© FrameSnap");
+const watermarkPosition = ref<WatermarkPosition>("bottomRight");
+const fontSize = ref(18);
+const textColor = ref("#ffffff");
+const opacity = ref(80);
+
+// Image watermark state
+const watermarkImage = ref<string>("");
+const watermarkSize = ref(80);
 
 const positions: { label: string; value: WatermarkPosition }[] = [
-  { label: '左上', value: 'topLeft' },
-  { label: '上中', value: 'topCenter' },
-  { label: '右上', value: 'topRight' },
-  { label: '左中', value: 'middleLeft' },
-  { label: '居中', value: 'middleCenter' },
-  { label: '右中', value: 'middleRight' },
-  { label: '左下', value: 'bottomLeft' },
-  { label: '下中', value: 'bottomCenter' },
-  { label: '右下', value: 'bottomRight' },
-]
+  { label: "左上", value: "topLeft" },
+  { label: "上中", value: "topCenter" },
+  { label: "右上", value: "topRight" },
+  { label: "左中", value: "middleLeft" },
+  { label: "居中", value: "middleCenter" },
+  { label: "右中", value: "middleRight" },
+  { label: "左下", value: "bottomLeft" },
+  { label: "下中", value: "bottomCenter" },
+  { label: "右下", value: "bottomRight" },
+];
 
 function addTextWatermark() {
-  if (!editorStore.image) return
+  if (!editorStore.image) return;
   editorStore.addTextWatermark(watermarkText.value, watermarkPosition.value, {
     fontSize: fontSize.value,
     color: textColor.value,
     opacity: opacity.value / 100,
-  })
+  });
+}
+
+function handleImageUpload(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const result = e.target?.result as string;
+    watermarkImage.value = result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function addImageWatermark() {
+  if (!editorStore.image || !watermarkImage.value) return;
+  editorStore.addImageWatermark(watermarkImage.value, watermarkPosition.value, {
+    width: watermarkSize.value,
+    height: watermarkSize.value,
+    opacity: opacity.value / 100,
+  });
 }
 
 function deleteLayer(layerId: string) {
-  editorStore.deleteLayer(layerId)
+  editorStore.deleteLayer(layerId);
 }
 
 function toggleVisibility(layerId: string) {
-  editorStore.toggleLayerVisibility(layerId)
+  editorStore.toggleLayerVisibility(layerId);
 }
 </script>
 
@@ -71,13 +97,7 @@ function toggleVisibility(layerId: string) {
 
     <div class="form-group">
       <label class="label">字体大小: {{ fontSize }}px</label>
-      <input
-        v-model="fontSize"
-        type="range"
-        min="12"
-        max="72"
-        class="slider"
-      />
+      <input v-model="fontSize" type="range" min="12" max="72" class="slider" />
     </div>
 
     <div class="form-group">
@@ -87,13 +107,7 @@ function toggleVisibility(layerId: string) {
 
     <div class="form-group">
       <label class="label">透明度: {{ opacity }}%</label>
-      <input
-        v-model="opacity"
-        type="range"
-        min="10"
-        max="100"
-        class="slider"
-      />
+      <input v-model="opacity" type="range" min="10" max="100" class="slider" />
     </div>
 
     <button
@@ -101,7 +115,52 @@ function toggleVisibility(layerId: string) {
       :disabled="!editorStore.image"
       @click="addTextWatermark"
     >
-      添加水印
+      添加文字水印
+    </button>
+
+    <!-- Image Watermark Section -->
+    <div class="divider"></div>
+    <h3 class="panel-title">图片水印</h3>
+
+    <div class="form-group">
+      <label class="label">上传水印图片</label>
+      <label class="upload-btn">
+        <input type="file" accept="image/*" @change="handleImageUpload" hidden />
+        <span v-if="!watermarkImage">+ 选择图片</span>
+        <img v-else :src="watermarkImage" alt="watermark" class="watermark-preview" />
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label class="label">位置</label>
+      <div class="position-grid">
+        <button
+          v-for="pos in positions"
+          :key="pos.value"
+          :class="['position-btn', { active: watermarkPosition === pos.value }]"
+          @click="watermarkPosition = pos.value"
+        >
+          {{ pos.label }}
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="label">大小: {{ watermarkSize }}px</label>
+      <input v-model="watermarkSize" type="range" min="20" max="200" class="slider" />
+    </div>
+
+    <div class="form-group">
+      <label class="label">透明度: {{ opacity }}%</label>
+      <input v-model="opacity" type="range" min="10" max="100" class="slider" />
+    </div>
+
+    <button
+      class="add-button"
+      :disabled="!editorStore.image || !watermarkImage"
+      @click="addImageWatermark"
+    >
+      添加图片水印
     </button>
 
     <!-- Layer List -->
@@ -111,20 +170,20 @@ function toggleVisibility(layerId: string) {
         <div
           v-for="layer in editorStore.layers"
           :key="layer.id"
-          :class="['layer-item', { active: layer.id === editorStore.activeLayerId }]"
+          :class="[
+            'layer-item',
+            { active: layer.id === editorStore.activeLayerId },
+          ]"
           @click="editorStore.setActiveLayer(layer.id)"
         >
           <button
             class="visibility-btn"
             @click.stop="toggleVisibility(layer.id)"
           >
-            {{ layer.visible ? '👁' : '👁‍🗨' }}
+            {{ layer.visible ? "👁" : "👁‍🗨" }}
           </button>
           <span class="layer-name">{{ layer.name }}</span>
-          <button
-            class="delete-btn"
-            @click.stop="deleteLayer(layer.id)"
-          >
+          <button class="delete-btn" @click.stop="deleteLayer(layer.id)">
             ×
           </button>
         </div>
@@ -301,5 +360,34 @@ function toggleVisibility(layerId: string) {
 
 .delete-btn:hover {
   color: var(--error-color);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 24px 0;
+}
+
+.upload-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-primary);
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.upload-btn:hover {
+  border-color: var(--accent-color);
+}
+
+.watermark-preview {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
 }
 </style>

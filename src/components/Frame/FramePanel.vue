@@ -1,32 +1,34 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useEditorStore } from '@/stores'
+import { ref } from "vue";
+import { useEditorStore } from "@/stores";
 
-const editorStore = useEditorStore()
+const editorStore = useEditorStore();
 
-const frameType = ref<'border' | 'blur' | 'filter'>('border')
-const borderWidth = ref(20)
-const borderColor = ref('#ffffff')
-const borderStyle = ref<'solid' | 'dashed' | 'dotted'>('solid')
-const filterType = ref<'grayscale' | 'sepia' | 'blur' | 'brightness' | 'contrast'>('grayscale')
-const filterIntensity = ref(30)
+const frameType = ref<"border" | "blur" | "filter">("border");
+const borderWidth = ref(20);
+const borderColor = ref("#ffffff");
+const borderStyle = ref<"solid" | "dashed" | "dotted">("solid");
+const filterType = ref<
+  "grayscale" | "sepia" | "blur" | "brightness" | "contrast"
+>("grayscale");
+const filterIntensity = ref(30);
 
 const borderStyles = [
-  { label: '实线', value: 'solid' },
-  { label: '虚线', value: 'dashed' },
-  { label: '点线', value: 'dotted' },
-]
+  { label: "实线", value: "solid" },
+  { label: "虚线", value: "dashed" },
+  { label: "点线", value: "dotted" },
+];
 
 const filterTypes = [
-  { label: '灰度', value: 'grayscale' },
-  { label: '复古', value: 'sepia' },
-  { label: '模糊', value: 'blur' },
-  { label: '亮度', value: 'brightness' },
-  { label: '对比度', value: 'contrast' },
-]
+  { label: "灰度", value: "grayscale" },
+  { label: "复古", value: "sepia" },
+  { label: "模糊", value: "blur" },
+  { label: "亮度", value: "brightness" },
+  { label: "对比度", value: "contrast" },
+];
 
 function addFrame() {
-  if (!editorStore.image) return
+  if (!editorStore.image) return;
   editorStore.addFrame({
     frameType: frameType.value,
     borderWidth: borderWidth.value,
@@ -34,7 +36,7 @@ function addFrame() {
     borderStyle: borderStyle.value,
     filterType: filterType.value,
     filterIntensity: filterIntensity.value,
-  })
+  });
 }
 </script>
 
@@ -125,11 +127,7 @@ function addFrame() {
       </div>
     </template>
 
-    <button
-      class="add-button"
-      :disabled="!editorStore.image"
-      @click="addFrame"
-    >
+    <button class="add-button" :disabled="!editorStore.image" @click="addFrame">
       添加相框
     </button>
   </div>

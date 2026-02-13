@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useSettingsStore } from '@/stores'
+import { onMounted } from "vue";
+import { useSettingsStore } from "@/stores";
 
-const settingsStore = useSettingsStore()
+const settingsStore = useSettingsStore();
 
 onMounted(() => {
-  settingsStore.loadFromLocalStorage()
-})
+  settingsStore.loadFromLocalStorage();
+});
 </script>
 
 <template>

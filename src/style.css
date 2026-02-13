@@ -10,12 +10,14 @@
   --border-color: #3a3a3c;
   --success-color: #30d158;
   --error-color: #ff453a;
-  
+
   /* Typography */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  
+
   /* Rendering */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -54,7 +56,12 @@ a:hover {
 }
 
 /* Headings */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin: 0;
   font-weight: 600;
 }
@@ -67,7 +74,9 @@ button {
 }
 
 /* Inputs base */
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: inherit;
 }
 

@@ -1,40 +1,40 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useEditorStore } from '@/stores'
+import { ref } from "vue";
+import { useEditorStore } from "@/stores";
 
-const editorStore = useEditorStore()
+const editorStore = useEditorStore();
 
-const layout = ref<'grid' | '拼图' | '自由'>('grid')
-const columns = ref(2)
-const rows = ref(2)
-const gap = ref(5)
-const collageImages = ref<string[]>([])
+const layout = ref<"grid" | "拼图" | "自由">("grid");
+const columns = ref(2);
+const rows = ref(2);
+const gap = ref(5);
+const collageImages = ref<string[]>([]);
 
 const layouts = [
-  { label: '网格', value: 'grid' },
-  { label: '拼图', value: '拼图' },
-  { label: '自由', value: '自由' },
-]
+  { label: "网格", value: "grid" },
+  { label: "拼图", value: "拼图" },
+  { label: "自由", value: "自由" },
+];
 
 function handleImageUpload(event: Event) {
-  const target = event.target as HTMLInputElement
-  const files = target.files
-  if (!files) return
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (!files) return;
 
   Array.from(files).forEach((file) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
-      const result = e.target?.result as string
-      collageImages.value.push(result)
-    }
-    reader.readAsDataURL(file)
-  })
+      const result = e.target?.result as string;
+      collageImages.value.push(result);
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function addCollage() {
   if (collageImages.value.length === 0) {
-    alert('请先上传图片')
-    return
+    alert("请先上传图片");
+    return;
   }
   editorStore.addCollage({
     layout: layout.value,
@@ -42,11 +42,11 @@ function addCollage() {
     rows: rows.value,
     gap: gap.value,
     images: collageImages.value,
-  })
+  });
 }
 
 function removeImage(index: number) {
-  collageImages.value.splice(index, 1)
+  collageImages.value.splice(index, 1);
 }
 </script>
 
@@ -71,58 +71,45 @@ function removeImage(index: number) {
     <template v-if="layout === 'grid'">
       <div class="form-group">
         <label class="label">列数: {{ columns }}</label>
-        <input
-          v-model="columns"
-          type="range"
-          min="1"
-          max="4"
-          class="slider"
-        />
+        <input v-model="columns" type="range" min="1" max="4" class="slider" />
       </div>
 
       <div class="form-group">
         <label class="label">行数: {{ rows }}</label>
-        <input
-          v-model="rows"
-          type="range"
-          min="1"
-          max="4"
-          class="slider"
-        />
+        <input v-model="rows" type="range" min="1" max="4" class="slider" />
       </div>
 
       <div class="form-group">
         <label class="label">间距: {{ gap }}px</label>
-        <input
-          v-model="gap"
-          type="range"
-          min="0"
-          max="20"
-          class="slider"
-        />
+        <input v-model="gap" type="range" min="0" max="20" class="slider" />
       </div>
     </template>
 
     <div class="form-group">
       <label class="label">上传图片 ({{ collageImages.length }})</label>
       <label class="upload-btn">
-        <input type="file" accept="image/*" multiple @change="handleImageUpload" hidden />
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          @change="handleImageUpload"
+          hidden
+        />
         <span>+ 添加图片</span>
       </label>
       <div v-if="collageImages.length > 0" class="image-list">
-        <div v-for="(img, index) in collageImages" :key="index" class="image-item">
+        <div
+          v-for="(img, index) in collageImages"
+          :key="index"
+          class="image-item"
+        >
           <img :src="img" alt="" />
           <button class="remove-btn" @click="removeImage(index)">×</button>
         </div>
       </div>
     </div>
 
-    <button
-      class="add-button"
-      @click="addCollage"
-    >
-      添加拼图
-    </button>
+    <button class="add-button" @click="addCollage">添加拼图</button>
   </div>
 </template>
 

@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import CanvasEditor from '@/components/Editor/CanvasEditor.vue'
-import Toolbar from '@/components/Editor/Toolbar.vue'
-import WatermarkPanel from '@/components/Watermark/WatermarkPanel.vue'
-import FramePanel from '@/components/Frame/FramePanel.vue'
-import CollagePanel from '@/components/Collage/CollagePanel.vue'
-import { useEditorStore, useSettingsStore } from '@/stores'
+import { ref } from "vue";
+import CanvasEditor from "@/components/Editor/CanvasEditor.vue";
+import Toolbar from "@/components/Editor/Toolbar.vue";
+import WatermarkPanel from "@/components/Watermark/WatermarkPanel.vue";
+import FramePanel from "@/components/Frame/FramePanel.vue";
+import CollagePanel from "@/components/Collage/CollagePanel.vue";
+import { useEditorStore, useSettingsStore } from "@/stores";
 
-const editorStore = useEditorStore()
-const settingsStore = useSettingsStore()
+const editorStore = useEditorStore();
+const settingsStore = useSettingsStore();
 
-type Tab = 'watermark' | 'frame' | 'collage'
-const activeTab = ref<Tab>('watermark')
-const canvasRef = ref<InstanceType<typeof CanvasEditor> | null>(null)
+type Tab = "watermark" | "frame" | "collage";
+const activeTab = ref<Tab>("watermark");
+const canvasRef = ref<InstanceType<typeof CanvasEditor> | null>(null);
 
 function handleExport() {
   if (!editorStore.image) {
-    alert('请先上传图片')
-    return
+    alert("请先上传图片");
+    return;
   }
-  canvasRef.value?.exportImage(settingsStore.settings.defaultExportFormat)
+  canvasRef.value?.exportImage(settingsStore.settings.defaultExportFormat);
 }
 </script>
 

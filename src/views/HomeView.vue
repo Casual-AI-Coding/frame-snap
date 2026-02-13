@@ -1,34 +1,59 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { useEditorStore } from '@/stores'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useEditorStore } from "@/stores";
 
-const router = useRouter()
-const editorStore = useEditorStore()
+const router = useRouter();
+const editorStore = useEditorStore();
+const isDragging = ref(false);
 
 function handleFileUpload(event: Event) {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+  loadImage(file);
+}
 
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const result = e.target?.result as string
-    const img = new Image()
-    img.onload = () => {
-      editorStore.setImage(result, img.width, img.height)
-      router.push('/editor')
-    }
-    img.src = result
+function handleDragOver(event: DragEvent) {
+  event.preventDefault();
+  isDragging.value = true;
+}
+
+function handleDragLeave() {
+  isDragging.value = false;
+}
+
+function handleDrop(event: DragEvent) {
+  event.preventDefault();
+  isDragging.value = false;
+  const files = event.dataTransfer?.files;
+  if (!files || files.length === 0) return;
+  const file = files[0];
+  if (file && file.type.startsWith("image/")) {
+    loadImage(file);
   }
-  reader.readAsDataURL(file)
+}
+
+function loadImage(file: File) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const result = e.target?.result as string;
+    const img = new Image();
+    img.onload = () => {
+      editorStore.setImage(result, img.width, img.height);
+      router.push("/editor");
+    };
+    img.src = result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function goToEditor() {
-  router.push('/editor')
+  router.push("/editor");
 }
 
 function goToTemplates() {
-  router.push('/templates')
+  router.push("/templates");
 }
 </script>
 
@@ -49,10 +74,22 @@ function goToTemplates() {
       </section>
 
       <section class="upload-section">
-        <label class="upload-button">
-          <input type="file" accept="image/*" @change="handleFileUpload" hidden />
+        <label
+          class="upload-button"
+          :class="{ dragging: isDragging }"
+          @dragover="handleDragOver"
+          @dragleave="handleDragLeave"
+          @drop="handleDrop"
+        >
+          <input
+            type="file"
+            accept="image/*"
+            @change="handleFileUpload"
+            hidden
+          />
           <span class="upload-icon">+</span>
           <span class="upload-text">上传图片</span>
+          <span class="upload-hint">或拖拽图片到这里</span>
         </label>
       </section>
 
@@ -145,6 +182,12 @@ function goToTemplates() {
   background: rgba(255, 107, 53, 0.05);
 }
 
+.upload-button.dragging {
+  border-color: var(--accent-color);
+  background: rgba(255, 107, 53, 0.15);
+  transform: scale(1.02);
+}
+
 .upload-icon {
   font-size: 48px;
   color: var(--accent-color);
@@ -154,6 +197,13 @@ function goToTemplates() {
 .upload-text {
   font-size: 16px;
   color: var(--text-secondary);
+}
+
+.upload-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  margin-top: 8px;
 }
 
 .quick-actions {

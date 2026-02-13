@@ -1,63 +1,63 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useTemplateStore, useEditorStore } from '@/stores'
-import type { Template } from '@/types'
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useTemplateStore, useEditorStore } from "@/stores";
+import type { Template } from "@/types";
 
-const router = useRouter()
-const templateStore = useTemplateStore()
-const editorStore = useEditorStore()
+const router = useRouter();
+const templateStore = useTemplateStore();
+const editorStore = useEditorStore();
 
-type Tab = 'watermark' | 'frame' | 'collage'
-const activeTab = ref<Tab>('watermark')
-const fileInput = ref<HTMLInputElement | null>(null)
+type Tab = "watermark" | "frame" | "collage";
+const activeTab = ref<Tab>("watermark");
+const fileInput = ref<HTMLInputElement | null>(null);
 
 const filteredTemplates = computed(() => {
-  return templateStore.templatesByCategory(activeTab.value)
-})
+  return templateStore.templatesByCategory(activeTab.value);
+});
 
 function useTemplate(template: Template) {
-  editorStore.loadFromTemplate(template.config.layers)
-  editorStore.canvasSize = template.config.canvas
-  router.push('/editor')
+  editorStore.loadFromTemplate(template.config.layers);
+  editorStore.canvasSize = template.config.canvas;
+  router.push("/editor");
 }
 
 function exportTemplate(template: Template) {
-  const json = templateStore.exportTemplate(template.id)
-  const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${template.nameEn || template.name}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+  const json = templateStore.exportTemplate(template.id);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${template.nameEn || template.name}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function deleteTemplate(id: string) {
-  templateStore.deleteTemplate(id)
+  templateStore.deleteTemplate(id);
 }
 
 function triggerImport() {
-  fileInput.value?.click()
+  fileInput.value?.click();
 }
 
 function handleImport(event: Event) {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
 
-  const reader = new FileReader()
+  const reader = new FileReader();
   reader.onload = (e) => {
-    const json = e.target?.result as string
-    const template = templateStore.importTemplate(json)
+    const json = e.target?.result as string;
+    const template = templateStore.importTemplate(json);
     if (template) {
-      alert('模板导入成功！')
+      alert("模板导入成功！");
     } else {
-      alert('模板格式无效')
+      alert("模板格式无效");
     }
-  }
-  reader.readAsText(file)
-  target.value = ''
+  };
+  reader.readAsText(file);
+  target.value = "";
 }
 </script>
 
@@ -69,9 +69,7 @@ function handleImport(event: Event) {
         <span class="title">模板库</span>
       </div>
       <div class="header-right">
-        <button class="import-button" @click="triggerImport">
-          导入模板
-        </button>
+        <button class="import-button" @click="triggerImport">导入模板</button>
         <input
           ref="fileInput"
           type="file"
@@ -111,7 +109,9 @@ function handleImport(event: Event) {
           class="template-card"
         >
           <div class="template-preview">
-            <span v-if="!template.thumbnail" class="preview-placeholder">◉</span>
+            <span v-if="!template.thumbnail" class="preview-placeholder"
+              >◉</span
+            >
             <img v-else :src="template.thumbnail" :alt="template.name" />
           </div>
           <div class="template-info">

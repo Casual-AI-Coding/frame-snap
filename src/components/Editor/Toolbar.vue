@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useEditorStore } from '@/stores'
+import { useEditorStore } from "@/stores";
 
-const editorStore = useEditorStore()
+const editorStore = useEditorStore();
 </script>
 
 <template>
@@ -29,7 +29,11 @@ const editorStore = useEditorStore()
         min="10"
         max="200"
         :value="editorStore.zoom * 100"
-        @input="editorStore.setZoom(Number(($event.target as HTMLInputElement).value) / 100)"
+        @input="
+          editorStore.setZoom(
+            Number(($event.target as HTMLInputElement).value) / 100,
+          )
+        "
         class="zoom-slider"
       />
     </div>
