@@ -71,7 +71,7 @@ export interface FrameLayerProps {
   borderColor: string;
   borderStyle: "solid" | "dashed" | "dotted";
   blurRadius: number;
-  filterType: "grayscale" | "sepia" | "blur" | "brightness" | "contrast";
+  filterType: "grayscale" | "sepia" | "blur" | "brightness" | "contrast" | "invert";
   filterIntensity: number;
 }
 

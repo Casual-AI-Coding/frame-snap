@@ -8,7 +8,7 @@ const editorStore = useEditorStore();
 const watermarkText = ref("© FrameSnap");
 const watermarkPosition = ref<WatermarkPosition>("bottomRight");
 const fontSize = ref(18);
-const textColor = ref("#ffffff");
+const textColor = ref("#000000");
 const opacity = ref(80);
 
 // Image watermark state

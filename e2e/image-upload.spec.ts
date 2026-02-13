@@ -9,8 +9,8 @@ test.describe('Image Upload and Loading', () => {
   test('should upload image from home page and navigate to editor', async ({ page }) => {
     await page.goto('/')
     
-    // Create a simple test image file
-    const testImagePath = path.resolve(__dirname, 'test-image.png')
+    // Use the actual test image file
+    const testImagePath = path.resolve(__dirname, 'test-image.jpg')
     
     // Upload image using file chooser
     const fileChooserPromise = page.waitForEvent('filechooser')
@@ -32,7 +32,7 @@ test.describe('Image Upload and Loading', () => {
   test('should enable watermark panel after image upload', async ({ page }) => {
     await page.goto('/')
     
-    const testImagePath = path.resolve(__dirname, 'test-image.png')
+    const testImagePath = path.resolve(__dirname, 'test-image.jpg')
     
     // Upload image
     const fileChooserPromise = page.waitForEvent('filechooser')
@@ -51,7 +51,7 @@ test.describe('Image Upload and Loading', () => {
   test('should add text watermark to image', async ({ page }) => {
     await page.goto('/')
     
-    const testImagePath = path.resolve(__dirname, 'test-image.png')
+    const testImagePath = path.resolve(__dirname, 'test-image.jpg')
     
     // Upload image
     const fileChooserPromise = page.waitForEvent('filechooser')
@@ -74,7 +74,7 @@ test.describe('Image Upload and Loading', () => {
   test('should add frame to image', async ({ page }) => {
     await page.goto('/')
     
-    const testImagePath = path.resolve(__dirname, 'test-image.png')
+    const testImagePath = path.resolve(__dirname, 'test-image.jpg')
     
     // Upload image
     const fileChooserPromise = page.waitForEvent('filechooser')
@@ -99,7 +99,7 @@ test.describe('Image Upload and Loading', () => {
   test('should enable export button after adding watermark', async ({ page }) => {
     await page.goto('/')
     
-    const testImagePath = path.resolve(__dirname, 'test-image.png')
+    const testImagePath = path.resolve(__dirname, 'test-image.jpg')
     
     // Upload image
     const fileChooserPromise = page.waitForEvent('filechooser')

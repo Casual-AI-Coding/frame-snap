@@ -191,6 +191,7 @@ describe("fabric utils", () => {
       const mockCanvas = {
         add: vi.fn(),
         renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]),
       };
 
       const props = {
@@ -211,6 +212,7 @@ describe("fabric utils", () => {
       const mockCanvas = {
         add: vi.fn(),
         renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]),
       };
 
       const props = {

@@ -115,7 +115,7 @@ export const useEditorStore = defineStore("editor", () => {
         fontFamily: "Arial",
         fontWeight: "normal",
         fontStyle: "normal",
-        color: "#ffffff",
+        color: "#000000",
         backgroundColor: "transparent",
         opacity: 0.8,
         rotation: 0,
@@ -171,7 +171,7 @@ export const useEditorStore = defineStore("editor", () => {
       props: {
         frameType: "border",
         borderWidth: 10,
-        borderColor: "#ffffff",
+        borderColor: "#000000",
         borderStyle: "solid",
         blurRadius: 0,
         filterType: "grayscale",

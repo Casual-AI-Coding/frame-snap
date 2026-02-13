@@ -5,6 +5,7 @@ import Toolbar from "@/components/Editor/Toolbar.vue";
 import WatermarkPanel from "@/components/Watermark/WatermarkPanel.vue";
 import FramePanel from "@/components/Frame/FramePanel.vue";
 import CollagePanel from "@/components/Collage/CollagePanel.vue";
+import LayerPropertiesPanel from "@/components/Layer/LayerPropertiesPanel.vue";
 import { useEditorStore, useSettingsStore } from "@/stores";
 
 const editorStore = useEditorStore();
@@ -13,13 +14,14 @@ const settingsStore = useSettingsStore();
 type Tab = "watermark" | "frame" | "collage";
 const activeTab = ref<Tab>("watermark");
 const canvasRef = ref<InstanceType<typeof CanvasEditor> | null>(null);
+const exportFormat = ref<"png" | "jpeg">(settingsStore.settings.defaultExportFormat);
 
 function handleExport() {
   if (!editorStore.image) {
     alert("请先上传图片");
     return;
   }
-  canvasRef.value?.exportImage(settingsStore.settings.defaultExportFormat);
+  canvasRef.value?.exportImage(exportFormat.value);
 }
 </script>
 
@@ -53,6 +55,10 @@ function handleExport() {
         </div>
       </div>
       <div class="header-right">
+        <select v-model="exportFormat" class="export-format">
+          <option value="png">PNG</option>
+          <option value="jpeg">JPEG</option>
+        </select>
         <button class="export-button" @click="handleExport">导出</button>
       </div>
     </header>
@@ -62,6 +68,7 @@ function handleExport() {
         <WatermarkPanel v-if="activeTab === 'watermark'" />
         <FramePanel v-else-if="activeTab === 'frame'" />
         <CollagePanel v-else-if="activeTab === 'collage'" />
+        <LayerPropertiesPanel v-if="editorStore.activeLayer" />
       </aside>
 
       <section class="canvas-container">
@@ -150,6 +157,17 @@ function handleExport() {
 .header-right {
   display: flex;
   gap: 12px;
+  align-items: center;
+}
+
+.export-format {
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .export-button {

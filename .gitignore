@@ -36,5 +36,6 @@ dist-ssr
 
 # Test
 coverage/
+test-results/
 
 # OpenCode

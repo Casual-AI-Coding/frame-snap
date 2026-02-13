@@ -8,7 +8,7 @@ import {
   filters,
   type FabricObject,
 } from "fabric";
-import type { TextLayerProps, FrameLayerProps } from "@/types";
+import type { TextLayerProps, FrameLayerProps, CollageLayerProps } from "@/types";
 
 // Create a new Fabric canvas
 export function createCanvas(
@@ -101,23 +101,29 @@ function processImage(
     return;
   }
 
-  // Resize canvas to match image dimensions (if method exists)
-  if (typeof canvas.setDimensions === "function") {
-    canvas.setDimensions({ width: imgWidth, height: imgHeight });
-  } else {
-    // Fallback for older Fabric.js versions
-    (canvas as any).width = imgWidth;
-    (canvas as any).height = imgHeight;
-  }
-  
-  // Set image dimensions explicitly to match canvas
+  // Get canvas dimensions
+  const canvasWidth = canvas.width || 800;
+  const canvasHeight = canvas.height || 600;
+
+  // Calculate scale to fit image within canvas while maintaining aspect ratio
+  const scaleX = canvasWidth / imgWidth;
+  const scaleY = canvasHeight / imgHeight;
+  const scale = Math.min(scaleX, scaleY);
+
+  // Calculate centered position
+  const scaledWidth = imgWidth * scale;
+  const scaledHeight = imgHeight * scale;
+  const left = (canvasWidth - scaledWidth) / 2;
+  const top = (canvasHeight - scaledHeight) / 2;
+
+  // Set image to fit within canvas
   img.set({
     width: imgWidth,
     height: imgHeight,
-    scaleX: 1,
-    scaleY: 1,
-    left: 0,
-    top: 0,
+    scaleX: scale,
+    scaleY: scale,
+    left: left,
+    top: top,
     originX: "left",
     originY: "top",
     selectable: false,
@@ -158,7 +164,7 @@ export function addTextToCanvas(
   return textbox;
 }
 
-// Add frame/border to canvas
+// Add frame/border/filter/blur to canvas
 export function addFrameToCanvas(
   canvas: Canvas,
   props: FrameLayerProps,
@@ -217,6 +223,22 @@ export function addFrameToCanvas(
 
     canvas.add(top, bottom, left, right);
     frames.push(top, bottom, left, right);
+  } else if (props.frameType === "filter") {
+    // Apply filter to base image
+    const baseImage = canvas
+      .getObjects()
+      .find((obj) => obj instanceof FabricImage);
+    if (baseImage) {
+      applyFilter(canvas, props.filterType, props.filterIntensity);
+    }
+  } else if (props.frameType === "blur") {
+    // Apply blur filter
+    const baseImage = canvas
+      .getObjects()
+      .find((obj) => obj instanceof FabricImage);
+    if (baseImage) {
+      applyFilter(canvas, "blur", props.blurRadius);
+    }
   }
 
   canvas.renderAll();
@@ -267,23 +289,30 @@ export function syncLayersFromCanvas(canvas: Canvas, layerIds: string[]): void {
   });
 }
 
-// Apply filter to image
+// Apply filter to base image only (first FabricImage)
 export function applyFilter(
   canvas: Canvas,
   filterType: string,
   intensity: number,
 ): void {
   const objects = canvas.getObjects();
-  objects.forEach((obj) => {
-    if (obj instanceof FabricImage) {
+  // Find all FabricImages and find the first one (base image)
+  const fabricImages = objects.filter(
+    (obj) => obj instanceof FabricImage,
+  ) as FabricImage[];
+
+  if (fabricImages.length > 0) {
+    // Apply filter to the first image (base image)
+    const baseImage = fabricImages[0];
+    if (baseImage) {
       const filter = createFilter(filterType, intensity);
       if (filter) {
-        obj.filters = [filter];
-        obj.applyFilters();
+        baseImage.filters = [filter];
+        baseImage.applyFilters();
         canvas.renderAll();
       }
     }
-  });
+  }
 }
 
 // Create fabric filter
@@ -299,6 +328,8 @@ function createFilter(type: string, value: number): any {
       return new filters.Brightness({ brightness: value / 100 - 0.5 });
     case "contrast":
       return new filters.Contrast({ contrast: value / 100 - 0.5 });
+    case "invert":
+      return new filters.Invert();
     default:
       return null;
   }
@@ -326,4 +357,154 @@ export function fitCanvasToContainer(
   const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only scale down
 
   return scale;
+}
+
+// Add collage to canvas
+export async function addCollageToCanvas(
+  canvas: Canvas,
+  props: CollageLayerProps,
+  canvasWidth: number,
+  canvasHeight: number,
+): Promise<FabricImage[]> {
+  const { columns, gap, images } = props;
+
+  if (images.length === 0) {
+    return [];
+  }
+
+  // Calculate cell dimensions - adjust grid to fit actual image count
+  const actualColumns = Math.min(columns, images.length);
+  const actualRows = Math.ceil(images.length / actualColumns);
+  
+  const cellWidth = (canvasWidth - gap * (actualColumns + 1)) / actualColumns;
+  const cellHeight = (canvasHeight - gap * (actualRows + 1)) / actualRows;
+
+  // Clear canvas and set white background
+  canvas.clear();
+  canvas.backgroundColor = "#ffffff";
+
+  const addedImages: FabricImage[] = [];
+
+  // Load and position each image
+  for (let i = 0; i < images.length; i++) {
+    const col = i % actualColumns;
+    const row = Math.floor(i / actualColumns);
+
+    // Skip if beyond grid
+    if (col >= actualColumns || row >= actualRows) {
+      break;
+    }
+
+    const imageSrc = images[i];
+    if (!imageSrc) continue;
+
+    try {
+      // Load image with EXIF orientation handling
+      const img = await loadImageWithOrientation(imageSrc);
+
+      // Calculate position
+      const left = gap + col * (cellWidth + gap);
+      const top = gap + row * (cellHeight + gap);
+
+      // Scale to fit cell while maintaining aspect ratio
+      const scaleX = cellWidth / (img.width || 1);
+      const scaleY = cellHeight / (img.height || 1);
+      const scale = Math.min(scaleX, scaleY);
+
+      img.set({
+        left,
+        top,
+        scaleX: scale,
+        scaleY: scale,
+        originX: "left",
+        originY: "top",
+        selectable: true,
+        evented: true,
+      });
+
+      canvas.add(img);
+      addedImages.push(img);
+    } catch (error) {
+      console.error(`Failed to load collage image ${i}:`, error);
+    }
+  }
+
+  canvas.renderAll();
+  return addedImages;
+}
+
+// Load image with proper EXIF orientation handling
+async function loadImageWithOrientation(src: string): Promise<FabricImage> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    
+    img.onload = () => {
+      // Create a canvas to handle EXIF orientation
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Failed to get canvas context"));
+        return;
+      }
+
+      // Get orientation from image (default to 1 if not present)
+      const orientation = (img as any).orientation || 1;
+      
+      // Set canvas size based on orientation
+      if (orientation >= 5 && orientation <= 8) {
+        canvas.width = img.height;
+        canvas.height = img.width;
+      } else {
+        canvas.width = img.width;
+        canvas.height = img.height;
+      }
+
+      // Apply orientation transformation
+      switch (orientation) {
+        case 2:
+          ctx.transform(-1, 0, 0, 1, canvas.width, 0);
+          break;
+        case 3:
+          ctx.transform(-1, 0, 0, -1, canvas.width, canvas.height);
+          break;
+        case 4:
+          ctx.transform(1, 0, 0, -1, 0, canvas.height);
+          break;
+        case 5:
+          ctx.transform(0, 1, 1, 0, 0, 0);
+          break;
+        case 6:
+          ctx.transform(0, 1, -1, 0, canvas.width, 0);
+          break;
+        case 7:
+          ctx.transform(0, -1, -1, 0, canvas.width, canvas.height);
+          break;
+        case 8:
+          ctx.transform(0, -1, 1, 0, 0, canvas.height);
+          break;
+        default:
+          // No transformation needed
+          break;
+      }
+
+      // Draw the image
+      ctx.drawImage(img, 0, 0);
+
+      // Create FabricImage from the canvas
+      FabricImage.fromURL(canvas.toDataURL(), {
+        crossOrigin: "anonymous",
+      })
+        .then((fabricImg) => {
+          resolve(fabricImg);
+        })
+        .catch(reject);
+    };
+
+    img.onerror = () => {
+      reject(new Error(`Failed to load image: ${src}`));
+    };
+
+    img.src = src;
+  });
 }

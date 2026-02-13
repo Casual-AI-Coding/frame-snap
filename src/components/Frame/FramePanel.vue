@@ -6,10 +6,10 @@ const editorStore = useEditorStore();
 
 const frameType = ref<"border" | "blur" | "filter">("border");
 const borderWidth = ref(20);
-const borderColor = ref("#ffffff");
+const borderColor = ref("#000000");
 const borderStyle = ref<"solid" | "dashed" | "dotted">("solid");
 const filterType = ref<
-  "grayscale" | "sepia" | "blur" | "brightness" | "contrast"
+  "grayscale" | "sepia" | "blur" | "brightness" | "contrast" | "invert"
 >("grayscale");
 const filterIntensity = ref(30);
 
@@ -25,6 +25,7 @@ const filterTypes = [
   { label: "模糊", value: "blur" },
   { label: "亮度", value: "brightness" },
   { label: "对比度", value: "contrast" },
+  { label: "反色", value: "invert" },
 ];
 
 function addFrame() {
