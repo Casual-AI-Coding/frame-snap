@@ -20,8 +20,8 @@ build/
 *.sln
 *.sw?
 
-# OS files
-.DS_Store
+# OpenCode
+.opencode/
 Thumbs.db
 
 # Test
