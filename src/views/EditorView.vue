@@ -5,9 +5,22 @@ import Toolbar from '@/components/Editor/Toolbar.vue'
 import WatermarkPanel from '@/components/Watermark/WatermarkPanel.vue'
 import FramePanel from '@/components/Frame/FramePanel.vue'
 import CollagePanel from '@/components/Collage/CollagePanel.vue'
+import { useEditorStore, useSettingsStore } from '@/stores'
+
+const editorStore = useEditorStore()
+const settingsStore = useSettingsStore()
 
 type Tab = 'watermark' | 'frame' | 'collage'
 const activeTab = ref<Tab>('watermark')
+const canvasRef = ref<InstanceType<typeof CanvasEditor> | null>(null)
+
+function handleExport() {
+  if (!editorStore.image) {
+    alert('请先上传图片')
+    return
+  }
+  canvasRef.value?.exportImage(settingsStore.settings.defaultExportFormat)
+}
 </script>
 
 <template>
@@ -40,7 +53,7 @@ const activeTab = ref<Tab>('watermark')
         </div>
       </div>
       <div class="header-right">
-        <button class="export-button">导出</button>
+        <button class="export-button" @click="handleExport">导出</button>
       </div>
     </header>
 
@@ -52,7 +65,7 @@ const activeTab = ref<Tab>('watermark')
       </aside>
 
       <section class="canvas-container">
-        <CanvasEditor />
+        <CanvasEditor ref="canvasRef" />
       </section>
     </main>
 

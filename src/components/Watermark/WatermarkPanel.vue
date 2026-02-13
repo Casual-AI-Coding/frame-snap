@@ -31,6 +31,14 @@ function addTextWatermark() {
     opacity: opacity.value / 100,
   })
 }
+
+function deleteLayer(layerId: string) {
+  editorStore.deleteLayer(layerId)
+}
+
+function toggleVisibility(layerId: string) {
+  editorStore.toggleLayerVisibility(layerId)
+}
 </script>
 
 <template>
@@ -95,6 +103,33 @@ function addTextWatermark() {
     >
       添加水印
     </button>
+
+    <!-- Layer List -->
+    <div v-if="editorStore.layers.length > 0" class="layer-section">
+      <h4 class="layer-title">图层</h4>
+      <div class="layer-list">
+        <div
+          v-for="layer in editorStore.layers"
+          :key="layer.id"
+          :class="['layer-item', { active: layer.id === editorStore.activeLayerId }]"
+          @click="editorStore.setActiveLayer(layer.id)"
+        >
+          <button
+            class="visibility-btn"
+            @click.stop="toggleVisibility(layer.id)"
+          >
+            {{ layer.visible ? '👁' : '👁‍🗨' }}
+          </button>
+          <span class="layer-name">{{ layer.name }}</span>
+          <button
+            class="delete-btn"
+            @click.stop="deleteLayer(layer.id)"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -195,5 +230,76 @@ function addTextWatermark() {
 .add-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.layer-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.layer-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.layer-item:hover {
+  border-color: var(--accent-color);
+}
+
+.layer-item.active {
+  border-color: var(--accent-color);
+  background: rgba(255, 107, 53, 0.1);
+}
+
+.visibility-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.visibility-btn:hover {
+  opacity: 1;
+}
+
+.layer-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text-secondary);
+  padding: 0 4px;
+}
+
+.delete-btn:hover {
+  color: var(--error-color);
 }
 </style>
