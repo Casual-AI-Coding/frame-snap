@@ -26,23 +26,47 @@ export async function addImageToCanvas(
 ): Promise<FabricImage> {
   return new Promise((resolve, reject) => {
     const imgEl = new window.Image()
+    imgEl.crossOrigin = 'anonymous'
     imgEl.onload = () => {
-      const fabricImage = new FabricImage(imgEl, {
-        left: 0,
-        top: 0,
-        selectable: false,
-        evented: false,
-      })
-      // Scale image to fit canvas
-      const scaleX = canvas.width! / fabricImage.width!
-      const scaleY = canvas.height! / fabricImage.height!
-      const scale = Math.min(scaleX, scaleY)
-      fabricImage.scale(scale)
-      canvas.add(fabricImage)
-      canvas.renderAll()
-      resolve(fabricImage)
+      try {
+        // Create fabric image from HTML image element
+        const fabricImage = new FabricImage(imgEl)
+        
+        fabricImage.set({
+          left: 0,
+          top: 0,
+          selectable: false,
+          evented: false,
+        })
+        
+        // Scale image to fit canvas maintaining aspect ratio
+        const canvasWidth = canvas.width || 800
+        const canvasHeight = canvas.height || 600
+        const imgWidth = imgEl.width
+        const imgHeight = imgEl.height
+        
+        const scaleX = canvasWidth / imgWidth
+        const scaleY = canvasHeight / imgHeight
+        const scale = Math.min(scaleX, scaleY, 1) // Don't scale up, only fit if larger
+        
+        fabricImage.scale(scale)
+        
+        // Center the image
+        const scaledWidth = imgWidth * scale
+        const scaledHeight = imgHeight * scale
+        fabricImage.set({
+          left: (canvasWidth - scaledWidth) / 2,
+          top: (canvasHeight - scaledHeight) / 2,
+        })
+        
+        canvas.add(fabricImage)
+        canvas.renderAll()
+        resolve(fabricImage)
+      } catch (error) {
+        reject(error)
+      }
     }
-    imgEl.onerror = reject
+    imgEl.onerror = () => reject(new Error('Failed to load image'))
     imgEl.src = imageSrc
   })
 }
