@@ -41,6 +41,7 @@ vi.mock("fabric", () => ({
     Blur: vi.fn().mockImplementation(() => ({})),
     Brightness: vi.fn().mockImplementation(() => ({})),
     Contrast: vi.fn().mockImplementation(() => ({})),
+    Invert: vi.fn().mockImplementation(() => ({})),
   },
 }));
 
@@ -533,6 +534,16 @@ describe("fabric utils", () => {
       };
 
       applyFilter(mockCanvas as any, "unknown", 50);
+      expect(mockCanvas.renderAll).not.toHaveBeenCalled();
+    });
+
+    it("should apply invert filter", () => {
+      const mockCanvas = {
+        getObjects: vi.fn().mockReturnValue([]),
+        renderAll: vi.fn(),
+      };
+
+      applyFilter(mockCanvas as any, "invert", 100);
       expect(mockCanvas.renderAll).not.toHaveBeenCalled();
     });
   });
