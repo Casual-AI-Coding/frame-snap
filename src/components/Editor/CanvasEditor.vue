@@ -153,6 +153,22 @@ watch(
           const textbox = addTextToCanvas(fabricCanvas!, layer.props as TextLayerProps)
           textbox.set('data-layer-id', layer.id)
           fabricObjects.set(layer.id, textbox)
+        } else if (layer.type === 'frame') {
+          const frameObjs = addFrameToCanvas(
+            fabricCanvas!,
+            layer.props as FrameLayerProps,
+            editorStore.canvasSize.width,
+            editorStore.canvasSize.height
+          )
+          if (frameObjs.length > 0) {
+            frameObjs.forEach((obj) => {
+              obj.set('data-layer-id', layer.id)
+            })
+            const firstObj = frameObjs[0]
+            if (firstObj) {
+              fabricObjects.set(layer.id, firstObj)
+            }
+          }
         }
       }
     })
