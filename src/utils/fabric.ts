@@ -366,18 +366,11 @@ export async function addCollageToCanvas(
   canvasWidth: number,
   canvasHeight: number,
 ): Promise<FabricImage[]> {
-  const { columns, gap, images } = props;
+  const { layout, columns, gap, images } = props;
 
   if (images.length === 0) {
     return [];
   }
-
-  // Calculate cell dimensions - adjust grid to fit actual image count
-  const actualColumns = Math.min(columns, images.length);
-  const actualRows = Math.ceil(images.length / actualColumns);
-  
-  const cellWidth = (canvasWidth - gap * (actualColumns + 1)) / actualColumns;
-  const cellHeight = (canvasHeight - gap * (actualRows + 1)) / actualRows;
 
   // Clear canvas and set white background
   canvas.clear();
@@ -385,47 +378,93 @@ export async function addCollageToCanvas(
 
   const addedImages: FabricImage[] = [];
 
-  // Load and position each image
-  for (let i = 0; i < images.length; i++) {
-    const col = i % actualColumns;
-    const row = Math.floor(i / actualColumns);
+  // Handle free layout - position images in a row
+  if (layout === "自由") {
+    const totalGap = gap * (images.length + 1);
+    const availableWidth = canvasWidth - totalGap;
+    const imgWidth = availableWidth / images.length;
+    const imgHeight = canvasHeight - gap * 2;
+    
+    for (let i = 0; i < images.length; i++) {
+      const imageSrc = images[i];
+      if (!imageSrc) continue;
 
-    // Skip if beyond grid
-    if (col >= actualColumns || row >= actualRows) {
-      break;
+      try {
+        const img = await loadImageWithOrientation(imageSrc);
+        
+        // Scale to fit height, maintain aspect ratio
+        const scale = imgHeight / (img.height || 1);
+        
+        const left = gap + i * (imgWidth + gap);
+        const top = gap;
+
+        img.set({
+          left,
+          top,
+          scaleX: scale,
+          scaleY: scale,
+          originX: "left",
+          originY: "top",
+          selectable: true,
+          evented: true,
+        });
+
+        canvas.add(img);
+        addedImages.push(img);
+      } catch (error) {
+        console.error(`Failed to load collage image ${i}:`, error);
+      }
     }
+  } else {
+    // Grid layout - existing logic
+    const actualColumns = Math.min(columns, images.length);
+    const actualRows = Math.ceil(images.length / actualColumns);
+    
+    const cellWidth = (canvasWidth - gap * (actualColumns + 1)) / actualColumns;
+    const cellHeight = (canvasHeight - gap * (actualRows + 1)) / actualRows;
 
-    const imageSrc = images[i];
-    if (!imageSrc) continue;
+    // Load and position each image
+    for (let i = 0; i < images.length; i++) {
+      const col = i % actualColumns;
+      const row = Math.floor(i / actualColumns);
 
-    try {
-      // Load image with EXIF orientation handling
-      const img = await loadImageWithOrientation(imageSrc);
+      // Skip if beyond grid
+      if (col >= actualColumns || row >= actualRows) {
+        break;
+      }
 
-      // Calculate position
-      const left = gap + col * (cellWidth + gap);
-      const top = gap + row * (cellHeight + gap);
+      const imageSrc = images[i];
+      if (!imageSrc) continue;
 
-      // Scale to fit cell while maintaining aspect ratio
-      const scaleX = cellWidth / (img.width || 1);
-      const scaleY = cellHeight / (img.height || 1);
-      const scale = Math.min(scaleX, scaleY);
+      try {
+        // Load image with EXIF orientation handling
+        const img = await loadImageWithOrientation(imageSrc);
 
-      img.set({
-        left,
-        top,
-        scaleX: scale,
-        scaleY: scale,
-        originX: "left",
-        originY: "top",
-        selectable: true,
-        evented: true,
-      });
+        // Calculate position
+        const left = gap + col * (cellWidth + gap);
+        const top = gap + row * (cellHeight + gap);
 
-      canvas.add(img);
-      addedImages.push(img);
-    } catch (error) {
-      console.error(`Failed to load collage image ${i}:`, error);
+        // Scale to fit cell while maintaining aspect ratio
+        const scaleX = cellWidth / (img.width || 1);
+        const scaleY = cellHeight / (img.height || 1);
+        const scale = Math.min(scaleX, scaleY);
+
+        img.set({
+          left,
+          top,
+          scaleX: scale,
+          scaleY: scale,
+          originX: "left",
+          originY: "top",
+          selectable: true,
+          evented: true,
+        });
+
+        canvas.add(img);
+        addedImages.push(img);
+      } catch (error) {
+        console.error(`Failed to load collage image ${i}:`, error);
+      }
     }
   }
 
