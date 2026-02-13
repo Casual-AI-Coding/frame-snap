@@ -182,4 +182,45 @@ describe("TemplateStore", () => {
       expect(frameTemplates.every((t) => t.category === "frame")).toBe(true);
     });
   });
+
+  describe("localStorage error handling", () => {
+    it("should handle localStorage save error", () => {
+      const store = useTemplateStore();
+      
+      // Mock localStorage.setItem to throw
+      const originalSetItem = localStorage.setItem;
+      localStorage.setItem = vi.fn().mockImplementation(() => {
+        throw new Error("Storage full");
+      });
+
+      // This should not throw
+      store.saveAsTemplate(
+        "Test",
+        "Test EN",
+        "watermark",
+        [],
+        { width: 800, height: 600 },
+        "#ffffff",
+      );
+
+      // Restore
+      localStorage.setItem = originalSetItem;
+    });
+
+    it("should handle localStorage load error", () => {
+      const store = useTemplateStore();
+      
+      // Mock localStorage.getItem to throw
+      const originalGetItem = localStorage.getItem;
+      localStorage.getItem = vi.fn().mockImplementation(() => {
+        throw new Error("Storage error");
+      });
+
+      // This should not throw - function should handle error gracefully
+      store.loadFromLocalStorage();
+
+      // Restore
+      localStorage.getItem = originalGetItem;
+    });
+  });
 });

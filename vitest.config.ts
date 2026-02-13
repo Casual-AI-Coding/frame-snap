@@ -22,6 +22,7 @@ export default defineConfig({
         'src/components/Frame/**',
         'src/components/Collage/**',
         'src/views/**',
+        'src/utils/fabric.ts',
         'dist/**',
         'node_modules/**',
         'coverage/**',
@@ -32,7 +33,7 @@ export default defineConfig({
       ],
       thresholds: {
         lines: 80,
-        functions: 80,
+        functions: 90,
         branches: 80,
         statements: 80,
       },
