@@ -22,7 +22,6 @@ export default defineConfig({
         'src/components/Frame/**',
         'src/components/Collage/**',
         'src/views/**',
-        'src/utils/fabric.ts',
         'dist/**',
         'node_modules/**',
         'coverage/**',

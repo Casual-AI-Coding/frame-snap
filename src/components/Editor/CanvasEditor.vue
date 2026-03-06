@@ -20,6 +20,8 @@ const containerRef = ref<HTMLDivElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 let fabricCanvas: Canvas | null = null;
 const fabricObjects = new Map<string, FabricObject>();
+const isLoading = ref(false);
+const loadingMessage = ref("");
 
 const canvasStyle = computed(() => ({
   transform: `scale(${editorStore.zoom})`,
@@ -63,12 +65,21 @@ function initCanvas() {
 async function loadBaseImage() {
   if (!fabricCanvas || !editorStore.image) return;
 
+  isLoading.value = true;
+  loadingMessage.value = "加载图片中...";
+  
   try {
     await addImageToCanvas(fabricCanvas, editorStore.image);
     // Recalculate zoom after image is loaded and canvas is resized
     handleResize();
   } catch (error) {
     console.error("Failed to load image:", error);
+    loadingMessage.value = "加载失败";
+    setTimeout(() => {
+      loadingMessage.value = "";
+    }, 2000);
+  } finally {
+    isLoading.value = false;
   }
 }
 
@@ -170,13 +181,13 @@ async function addImageWatermarkToCanvas(
 }
 
 // Export image
-function exportImage(format: "png" | "jpeg" = "png") {
+function exportImage(format: "png" | "jpeg" = "png", quality: number = 1) {
   if (!fabricCanvas) return;
 
   const dataUrl = exportCanvas(
     fabricCanvas,
     format,
-    settingsStore.settings.defaultExportQuality,
+    quality,
   );
   const timestamp = Date.now();
   downloadImage(dataUrl, `framesnap-${timestamp}.${format}`);
@@ -422,11 +433,17 @@ onUnmounted(() => {
 
 <template>
   <div ref="containerRef" class="canvas-container">
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="spinner"></div>
+      <p>{{ loadingMessage || "加载中..." }}</p>
+    </div>
     <div class="canvas-wrapper" :style="canvasStyle">
       <canvas ref="canvasEl"></canvas>
     </div>
-    <div v-if="!editorStore.image" class="empty-state">
+    <div v-if="!editorStore.image && !isLoading" class="empty-state">
+      <div class="empty-icon">📷</div>
       <p>请先上传图片</p>
+      <p class="empty-hint">支持 JPG、PNG、WebP 格式</p>
     </div>
   </div>
 </template>
@@ -440,6 +457,41 @@ onUnmounted(() => {
   justify-content: center;
   overflow: hidden;
   position: relative;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  color: white;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-overlay p {
+  margin-top: 12px;
+  font-size: 14px;
 }
 
 .canvas-wrapper {
@@ -460,8 +512,20 @@ onUnmounted(() => {
   text-align: center;
 }
 
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
 .empty-state p {
   margin: 0;
   font-size: 14px;
+}
+
+.empty-hint {
+  margin-top: 8px !important;
+  font-size: 12px !important;
+  opacity: 0.6;
 }
 </style>

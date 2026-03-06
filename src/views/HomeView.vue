@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useEditorStore } from "@/stores";
+import { parseExif, type ExifData } from "@/utils/exif";
 
 const router = useRouter();
 const editorStore = useEditorStore();
 const isDragging = ref(false);
+const isLoading = ref(false);
 
 function handleFileUpload(event: Event) {
   const target = event.target as HTMLInputElement;
@@ -35,18 +37,54 @@ function handleDrop(event: DragEvent) {
 }
 
 function loadImage(file: File) {
+  isLoading.value = true;
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     const result = e.target?.result as string;
     const img = new Image();
-    img.onload = () => {
-      editorStore.setImage(result, img.width, img.height);
+    img.onload = async () => {
+      // Extract EXIF data
+      let exifData: ExifData | null = null;
+      try {
+        exifData = await parseExif(result);
+      } catch {
+        // Ignore EXIF parsing errors
+        exifData = null;
+      }
+      editorStore.setImage(result, img.width, img.height, exifData);
+      isLoading.value = false;
       router.push("/editor");
+    };
+    img.onerror = () => {
+      isLoading.value = false;
+      alert("图片加载失败，请重试");
     };
     img.src = result;
   };
+  reader.onerror = () => {
+    isLoading.value = false;
+    alert("文件读取失败，请重试");
+  };
   reader.readAsDataURL(file);
 }
+
+// Keyboard shortcuts
+function handleKeyDown(event: KeyboardEvent) {
+  // Ctrl/Cmd + U to trigger upload
+  if ((event.ctrlKey || event.metaKey) && event.key === "u") {
+    event.preventDefault();
+    const input = document.querySelector('.upload-button input') as HTMLInputElement;
+    input?.click();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener("keydown", handleKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeyDown);
+});
 
 function goToEditor() {
   router.push("/editor");
@@ -76,7 +114,7 @@ function goToTemplates() {
       <section class="upload-section">
         <label
           class="upload-button"
-          :class="{ dragging: isDragging }"
+          :class="{ dragging: isDragging, loading: isLoading }"
           @dragover="handleDragOver"
           @dragleave="handleDragLeave"
           @drop="handleDrop"
@@ -84,13 +122,18 @@ function goToTemplates() {
           <input
             type="file"
             accept="image/*"
+            :disabled="isLoading"
             @change="handleFileUpload"
             hidden
           />
-          <span class="upload-icon">+</span>
-          <span class="upload-text">上传图片</span>
-          <span class="upload-hint">或拖拽图片到这里</span>
+          <span v-if="isLoading" class="loading-spinner"></span>
+          <template v-else>
+            <span class="upload-icon">+</span>
+            <span class="upload-text">上传图片</span>
+            <span class="upload-hint">点击或拖拽图片到这里</span>
+          </template>
         </label>
+        <p class="shortcut-hint">快捷键: Ctrl+U</p>
       </section>
 
       <section class="quick-actions">
@@ -188,6 +231,25 @@ function goToTemplates() {
   transform: scale(1.02);
 }
 
+.upload-button.loading {
+  cursor: wait;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 107, 53, 0.3);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .upload-icon {
   font-size: 48px;
   color: var(--accent-color);
@@ -204,6 +266,13 @@ function goToTemplates() {
   color: var(--text-secondary);
   opacity: 0.6;
   margin-top: 8px;
+}
+
+.shortcut-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  margin-top: 16px;
 }
 
 .quick-actions {

@@ -10,11 +10,27 @@ const rows = ref(2);
 const gap = ref(5);
 const collageImages = ref<string[]>([]);
 
+// Preset layouts
+const presetLayouts = [
+  { label: "2x2", columns: 2, rows: 2, icon: "田" },
+  { label: "3x3", columns: 3, rows: 3, icon: "井" },
+  { label: "2x1", columns: 2, rows: 1, icon: "＝" },
+  { label: "1x2", columns: 1, rows: 2, icon: "‖" },
+  { label: "3x1", columns: 3, rows: 1, icon: "≡" },
+];
+
 const layouts = [
   { label: "网格", value: "grid" },
   { label: "拼图", value: "拼图" },
   { label: "自由", value: "自由" },
 ];
+
+// Apply preset layout
+function applyPreset(preset: typeof presetLayouts[0]) {
+  columns.value = preset.columns;
+  rows.value = preset.rows;
+  layout.value = "grid";
+}
 
 function handleImageUpload(event: Event) {
   const target = event.target as HTMLInputElement;
@@ -48,6 +64,10 @@ function addCollage() {
 function removeImage(index: number) {
   collageImages.value.splice(index, 1);
 }
+
+function clearAllImages() {
+  collageImages.value = [];
+}
 </script>
 
 <template>
@@ -69,6 +89,23 @@ function removeImage(index: number) {
     </div>
 
     <template v-if="layout === 'grid'">
+      <!-- Preset Layouts -->
+      <div class="form-group">
+        <label class="label">预设布局</label>
+        <div class="preset-grid">
+          <button
+            v-for="preset in presetLayouts"
+            :key="preset.label"
+            class="preset-btn"
+            :title="`${preset.columns}x${preset.rows} 网格`"
+            @click="applyPreset(preset)"
+          >
+            <span class="preset-icon">{{ preset.icon }}</span>
+            <span class="preset-label">{{ preset.label }}</span>
+          </button>
+        </div>
+      </div>
+
       <div class="form-group">
         <label class="label">列数: {{ columns }}</label>
         <input v-model="columns" type="range" min="1" max="4" class="slider" />
@@ -86,7 +123,12 @@ function removeImage(index: number) {
     </template>
 
     <div class="form-group">
-      <label class="label">上传图片 ({{ collageImages.length }})</label>
+      <div class="upload-header">
+        <label class="label">上传图片 ({{ collageImages.length }})</label>
+        <button v-if="collageImages.length > 0" class="clear-btn" @click="clearAllImages">
+          清空
+        </button>
+      </div>
       <label class="upload-btn">
         <input
           type="file"
@@ -165,6 +207,62 @@ function removeImage(index: number) {
 .slider {
   width: 100%;
   accent-color: var(--accent-color);
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+  border-color: var(--accent-color);
+  background: rgba(255, 107, 53, 0.1);
+}
+
+.preset-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.preset-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.upload-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.clear-btn {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.clear-btn:hover {
+  border-color: var(--error-color);
+  color: var(--error-color);
 }
 
 .add-button {

@@ -28,8 +28,8 @@ describe("WatermarkPanel.vue", () => {
 
     expect(wrapper.find('input[type="text"]').exists()).toBe(true);
     expect(wrapper.find('input[type="color"]').exists()).toBe(true);
-    // Now has 4 range inputs: fontSize, opacity (text), watermarkSize, opacity (image)
-    expect(wrapper.findAll('input[type="range"]').length).toBe(4);
+    // Now has 5 range inputs: fontSize, textRotation, opacity (text), watermarkSize, opacity (image)
+    expect(wrapper.findAll('input[type="range"]').length).toBe(5);
   });
 
   it("has position grid with 9 positions (2 sets)", () => {

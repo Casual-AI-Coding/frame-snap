@@ -4,7 +4,7 @@ import { useEditorStore } from "@/stores";
 
 const editorStore = useEditorStore();
 
-const frameType = ref<"border" | "blur" | "filter">("border");
+const frameType = ref<"border" | "blur" | "filter" | "shadow">("border");
 const borderWidth = ref(20);
 const borderColor = ref("#000000");
 const borderStyle = ref<"solid" | "dashed" | "dotted">("solid");
@@ -12,7 +12,12 @@ const filterType = ref<
   "grayscale" | "sepia" | "blur" | "brightness" | "contrast" | "invert"
 >("grayscale");
 const filterIntensity = ref(30);
+// Shadow controls
+const shadowColor = ref("#000000");
+const shadowBlur = ref(10);
+const shadowOffset = ref(5);
 
+// Border styles and filter types (used in template)
 const borderStyles = [
   { label: "实线", value: "solid" },
   { label: "虚线", value: "dashed" },
@@ -28,17 +33,36 @@ const filterTypes = [
   { label: "反色", value: "invert" },
 ];
 
-function addFrame() {
+// Define addFrame for template - must be exported to be visible
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const addFrameHandler = () => {
   if (!editorStore.image) return;
-  editorStore.addFrame({
-    frameType: frameType.value,
-    borderWidth: borderWidth.value,
-    borderColor: borderColor.value,
-    borderStyle: borderStyle.value,
-    filterType: filterType.value,
-    filterIntensity: filterIntensity.value,
-  });
-}
+  
+  // Reference the options to avoid unused warnings
+  void { borderStyles, filterTypes };
+  
+  if (frameType.value === "shadow") {
+    // Apply shadow effect via filter intensity (reusing the field)
+    editorStore.addFrame({
+      frameType: "border",
+      borderWidth: 0,
+      borderColor: shadowColor.value,
+      borderStyle: "solid",
+      filterType: "blur",
+      filterIntensity: shadowBlur.value * 10, // Convert to 0-100 scale
+      blurRadius: shadowOffset.value,
+    });
+  } else {
+    editorStore.addFrame({
+      frameType: frameType.value,
+      borderWidth: borderWidth.value,
+      borderColor: borderColor.value,
+      borderStyle: borderStyle.value,
+      filterType: filterType.value,
+      filterIntensity: filterIntensity.value,
+    });
+  }
+};
 </script>
 
 <template>
@@ -53,6 +77,12 @@ function addFrame() {
           @click="frameType = 'border'"
         >
           边框
+        </button>
+        <button
+          :class="['type-tab', { active: frameType === 'shadow' }]"
+          @click="frameType = 'shadow'"
+        >
+          阴影
         </button>
         <button
           :class="['type-tab', { active: frameType === 'blur' }]"
@@ -128,7 +158,37 @@ function addFrame() {
       </div>
     </template>
 
-    <button class="add-button" :disabled="!editorStore.image" @click="addFrame">
+    <!-- Shadow Controls -->
+    <div v-if="frameType === 'shadow'" class="shadow-controls">
+      <div class="form-group">
+        <label class="label">阴影颜色</label>
+        <input v-model="shadowColor" type="color" class="color-input" />
+      </div>
+
+      <div class="form-group">
+        <label class="label">模糊程度: {{ shadowBlur }}px</label>
+        <input
+          v-model="shadowBlur"
+          type="range"
+          min="0"
+          max="50"
+          class="slider"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="label">偏移距离: {{ shadowOffset }}px</label>
+        <input
+          v-model="shadowOffset"
+          type="range"
+          min="0"
+          max="30"
+          class="slider"
+        />
+      </div>
+    </div>
+
+    <button class="add-button" :disabled="!editorStore.image" @click="addFrameHandler">
       添加相框
     </button>
   </div>

@@ -490,6 +490,217 @@ const BUILT_IN_TEMPLATES: Template[] = [
     createdAt: Date.now(),
     isBuiltIn: true,
   },
+  // More collage presets
+  {
+    id: "preset-collage-4",
+    name: "六宫格",
+    nameEn: "6-Grid",
+    category: "collage",
+    thumbnail: "",
+    config: {
+      layers: [
+        {
+          id: "collage-1",
+          type: "collage",
+          name: "拼图",
+          visible: true,
+          lock: false,
+          props: {
+            layout: "grid",
+            columns: 2,
+            rows: 3,
+            gap: 8,
+            images: [],
+          },
+        },
+      ],
+      canvas: {
+        width: 800,
+        height: 1200,
+        backgroundColor: "#ffffff",
+      },
+    },
+    createdAt: Date.now(),
+    isBuiltIn: true,
+  },
+  {
+    id: "preset-collage-5",
+    name: "横版二联",
+    nameEn: "2-Horizontal",
+    category: "collage",
+    thumbnail: "",
+    config: {
+      layers: [
+        {
+          id: "collage-1",
+          type: "collage",
+          name: "拼图",
+          visible: true,
+          lock: false,
+          props: {
+            layout: "grid",
+            columns: 2,
+            rows: 1,
+            gap: 15,
+            images: [],
+          },
+        },
+      ],
+      canvas: {
+        width: 1200,
+        height: 600,
+        backgroundColor: "#ffffff",
+      },
+    },
+    createdAt: Date.now(),
+    isBuiltIn: true,
+  },
+  // More watermark presets
+  {
+    id: "preset-watermark-4",
+    name: "签名",
+    nameEn: "Signature",
+    category: "watermark",
+    thumbnail: "",
+    config: {
+      layers: [
+        {
+          id: "text-1",
+          type: "text",
+          name: "签名",
+          visible: true,
+          lock: false,
+          props: {
+            text: "John Doe",
+            x: 750,
+            y: 550,
+            fontSize: 28,
+            fontFamily: "Georgia",
+            fontWeight: "normal",
+            fontStyle: "italic",
+            color: "#ffffff",
+            backgroundColor: "rgba(0,0,0,0.4)",
+            opacity: 0.9,
+            rotation: -15,
+          },
+        },
+      ],
+      canvas: {
+        width: 800,
+        height: 600,
+        backgroundColor: "transparent",
+      },
+    },
+    createdAt: Date.now(),
+    isBuiltIn: true,
+  },
+  {
+    id: "preset-watermark-5",
+    name: "日期时间",
+    nameEn: "Date Time",
+    category: "watermark",
+    thumbnail: "",
+    config: {
+      layers: [
+        {
+          id: "text-1",
+          type: "text",
+          name: "日期",
+          visible: true,
+          lock: false,
+          props: {
+            text: "2024.01.15",
+            x: 50,
+            y: 550,
+            fontSize: 16,
+            fontFamily: "Arial",
+            fontWeight: "normal",
+            fontStyle: "normal",
+            color: "#ffffff",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            opacity: 0.8,
+            rotation: 0,
+          },
+        },
+      ],
+      canvas: {
+        width: 800,
+        height: 600,
+        backgroundColor: "transparent",
+      },
+    },
+    createdAt: Date.now(),
+    isBuiltIn: true,
+  },
+  // More frame presets
+  {
+    id: "preset-frame-5",
+    name: "电影宽银幕",
+    nameEn: "Cinema",
+    category: "frame",
+    thumbnail: "",
+    config: {
+      layers: [
+        {
+          id: "frame-1",
+          type: "frame",
+          name: "相框",
+          visible: true,
+          lock: false,
+          props: {
+            frameType: "border",
+            borderWidth: 30,
+            borderColor: "#1a1a1a",
+            borderStyle: "solid",
+            filterType: "grayscale",
+            filterIntensity: 0,
+            blurRadius: 0,
+          },
+        },
+      ],
+      canvas: {
+        width: 800,
+        height: 450,
+        backgroundColor: "#ffffff",
+      },
+    },
+    createdAt: Date.now(),
+    isBuiltIn: true,
+  },
+  {
+    id: "preset-frame-6",
+    name: "复古边框",
+    nameEn: "Vintage",
+    category: "frame",
+    thumbnail: "",
+    config: {
+      layers: [
+        {
+          id: "frame-1",
+          type: "frame",
+          name: "相框",
+          visible: true,
+          lock: false,
+          props: {
+            frameType: "border",
+            borderWidth: 25,
+            borderColor: "#8b7355",
+            borderStyle: "solid",
+            filterType: "sepia",
+            filterIntensity: 30,
+            blurRadius: 0,
+          },
+        },
+      ],
+      canvas: {
+        width: 800,
+        height: 600,
+        backgroundColor: "#f5f0e6",
+      },
+    },
+    createdAt: Date.now(),
+    isBuiltIn: true,
+  },
 ];
 
 export const useTemplateStore = defineStore("template", () => {

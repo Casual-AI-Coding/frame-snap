@@ -19,14 +19,16 @@ describe("FramePanel.vue", () => {
     const wrapper = mount(FramePanel);
 
     const tabs = wrapper.findAll(".type-tab");
-    expect(tabs.length).toBe(3);
+    // Now has 4 tabs: border, shadow, blur, filter
+    expect(tabs.length).toBe(4);
   });
 
   it("has type tabs and switches", async () => {
     const wrapper = mount(FramePanel);
 
     const tabs = wrapper.findAll(".type-tab");
-    expect(tabs.length).toBe(3);
+    // Now has 4 tabs: border, shadow, blur, filter
+    expect(tabs.length).toBe(4);
 
     // Click on border tab
     await tabs[0]!.trigger("click");

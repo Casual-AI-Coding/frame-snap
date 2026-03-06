@@ -15,13 +15,14 @@ type Tab = "watermark" | "frame" | "collage";
 const activeTab = ref<Tab>("watermark");
 const canvasRef = ref<InstanceType<typeof CanvasEditor> | null>(null);
 const exportFormat = ref<"png" | "jpeg">(settingsStore.settings.defaultExportFormat);
+const exportQuality = ref(settingsStore.settings.defaultExportQuality);
 
 function handleExport() {
   if (!editorStore.image) {
     alert("请先上传图片");
     return;
   }
-  canvasRef.value?.exportImage(exportFormat.value);
+  canvasRef.value?.exportImage(exportFormat.value, exportQuality.value);
 }
 </script>
 
@@ -55,9 +56,16 @@ function handleExport() {
         </div>
       </div>
       <div class="header-right">
-        <select v-model="exportFormat" class="export-format">
+        <select v-model="exportFormat" class="export-select">
           <option value="png">PNG</option>
           <option value="jpeg">JPEG</option>
+        </select>
+        <select v-model="exportQuality" class="export-select quality-select">
+          <option :value="1">100%</option>
+          <option :value="0.9">90%</option>
+          <option :value="0.8">80%</option>
+          <option :value="0.7">70%</option>
+          <option :value="0.5">50%</option>
         </select>
         <button class="export-button" @click="handleExport">导出</button>
       </div>
@@ -160,7 +168,7 @@ function handleExport() {
   align-items: center;
 }
 
-.export-format {
+.export-select {
   padding: 8px 12px;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
@@ -168,6 +176,15 @@ function handleExport() {
   color: var(--text-primary);
   cursor: pointer;
   font-size: 14px;
+}
+
+.export-select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.quality-select {
+  width: 80px;
 }
 
 .export-button {

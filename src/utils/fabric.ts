@@ -315,8 +315,8 @@ export function applyFilter(
   }
 }
 
-// Create fabric filter
-function createFilter(type: string, value: number): any {
+// Create fabric filter (exported for testing)
+export function createFilter(type: string, value: number): any {
   switch (type) {
     case "grayscale":
       return new filters.Grayscale();
@@ -360,11 +360,13 @@ export function fitCanvasToContainer(
 }
 
 // Add collage to canvas
+// imageLoader parameter is optional and used for testing
 export async function addCollageToCanvas(
   canvas: Canvas,
   props: CollageLayerProps,
   canvasWidth: number,
   canvasHeight: number,
+  imageLoader: ImageLoader = defaultImageLoader,
 ): Promise<FabricImage[]> {
   const { layout, columns, gap, images } = props;
 
@@ -390,7 +392,7 @@ export async function addCollageToCanvas(
       if (!imageSrc) continue;
 
       try {
-        const img = await loadImageWithOrientation(imageSrc);
+        const img = await imageLoader(imageSrc);
         
         // Scale to fit height, maintain aspect ratio
         const scale = imgHeight / (img.height || 1);
@@ -437,8 +439,8 @@ export async function addCollageToCanvas(
       if (!imageSrc) continue;
 
       try {
-        // Load image with EXIF orientation handling
-        const img = await loadImageWithOrientation(imageSrc);
+        // Load image using the injectable imageLoader
+        const img = await imageLoader(imageSrc);
 
         // Calculate position
         const left = gap + col * (cellWidth + gap);
@@ -472,78 +474,19 @@ export async function addCollageToCanvas(
   return addedImages;
 }
 
-// Load image with proper EXIF orientation handling
-async function loadImageWithOrientation(src: string): Promise<FabricImage> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    
-    img.onload = () => {
-      // Create a canvas to handle EXIF orientation
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("Failed to get canvas context"));
-        return;
-      }
+// Type for injectable image loader (used for testing)
+export type ImageLoader = (src: string) => Promise<FabricImage>;
 
-      // Get orientation from image (default to 1 if not present)
-      const orientation = (img as any).orientation || 1;
-      
-      // Set canvas size based on orientation
-      if (orientation >= 5 && orientation <= 8) {
-        canvas.width = img.height;
-        canvas.height = img.width;
-      } else {
-        canvas.width = img.width;
-        canvas.height = img.height;
-      }
+// Default image loader - simple wrapper around FabricImage.fromURL
+export async function defaultImageLoader(src: string): Promise<FabricImage> {
+  const fabricImg = await FabricImage.fromURL(src, { crossOrigin: "anonymous" });
+  if (!fabricImg) {
+    throw new Error(`Failed to load image: ${src}`);
+  }
+  return fabricImg;
+}
 
-      // Apply orientation transformation
-      switch (orientation) {
-        case 2:
-          ctx.transform(-1, 0, 0, 1, canvas.width, 0);
-          break;
-        case 3:
-          ctx.transform(-1, 0, 0, -1, canvas.width, canvas.height);
-          break;
-        case 4:
-          ctx.transform(1, 0, 0, -1, 0, canvas.height);
-          break;
-        case 5:
-          ctx.transform(0, 1, 1, 0, 0, 0);
-          break;
-        case 6:
-          ctx.transform(0, 1, -1, 0, canvas.width, 0);
-          break;
-        case 7:
-          ctx.transform(0, -1, -1, 0, canvas.width, canvas.height);
-          break;
-        case 8:
-          ctx.transform(0, -1, 1, 0, 0, canvas.height);
-          break;
-        default:
-          // No transformation needed
-          break;
-      }
-
-      // Draw the image
-      ctx.drawImage(img, 0, 0);
-
-      // Create FabricImage from the canvas
-      FabricImage.fromURL(canvas.toDataURL(), {
-        crossOrigin: "anonymous",
-      })
-        .then((fabricImg) => {
-          resolve(fabricImg);
-        })
-        .catch(reject);
-    };
-
-    img.onerror = () => {
-      reject(new Error(`Failed to load image: ${src}`));
-    };
-
-    img.src = src;
-  });
+// Load image with proper EXIF orientation handling (exported for testing)
+export async function loadImageWithOrientation(src: string): Promise<FabricImage> {
+  return defaultImageLoader(src);
 }

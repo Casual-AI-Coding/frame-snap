@@ -11,7 +11,12 @@ import {
   fitCanvasToContainer,
   addImageToCanvas,
   applyFilter,
+  addCollageToCanvas,
+  defaultImageLoader,
+  loadImageWithOrientation,
+  createFilter,
 } from "../fabric";
+import type { FabricImage } from "fabric";
 
 // Mock fabric module
 vi.mock("fabric", () => ({
@@ -33,6 +38,11 @@ vi.mock("fabric", () => ({
       height: 100,
       set: vi.fn(),
       scale: vi.fn(),
+      getElement: vi.fn().mockReturnValue({
+        naturalWidth: 100,
+        naturalHeight: 100,
+        complete: true,
+      }),
     }),
   },
   filters: {
@@ -45,6 +55,33 @@ vi.mock("fabric", () => ({
   },
 }));
 
+// Create mock Image class before any imports
+const MockImage = vi.fn((src?: string) => {
+  (this as any).src = src || "";
+  (this as any).complete = true;
+  (this as any).naturalWidth = 100;
+  (this as any).naturalHeight = 100;
+  (this as any).orientation = 1;
+  
+  // Simulate async loading
+  setTimeout(() => {
+    if ((this as any).onload) (this as any).onload();
+  }, 0);
+}) as any;
+
+MockImage.prototype = {
+  src: "",
+  crossOrigin: "",
+  onload: null,
+  onerror: null,
+  complete: true,
+  naturalWidth: 100,
+  naturalHeight: 100,
+  width: 100,
+  height: 100,
+  orientation: 1,
+};
+
 // Mock document
 const mockLink = {
   download: "",
@@ -53,9 +90,29 @@ const mockLink = {
   remove: vi.fn(),
 };
 
+const mockCreateElement = (tagName: string) => {
+  if (tagName === "canvas") {
+    return {
+      width: 100,
+      height: 100,
+      getContext: vi.fn().mockReturnValue({
+        transform: vi.fn(),
+        drawImage: vi.fn(),
+      }),
+      toDataURL: vi.fn().mockReturnValue("data:image/png;base64,mock"),
+    };
+  }
+  if (tagName === "a") {
+    return mockLink;
+  }
+  return {};
+};
+
+// Setup global Image mock before the fabric mock
 beforeEach(() => {
   vi.clearAllMocks();
-  document.createElement = vi.fn().mockReturnValue(mockLink);
+  vi.stubGlobal("Image", MockImage);
+  document.createElement = vi.fn().mockImplementation(mockCreateElement);
   document.body.appendChild = vi.fn();
   document.body.removeChild = vi.fn();
 });
@@ -545,6 +602,344 @@ describe("fabric utils", () => {
 
       applyFilter(mockCanvas as any, "invert", 100);
       expect(mockCanvas.renderAll).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("addCollageToCanvas", () => {
+    it("should return empty array when images is empty", async () => {
+      const mockCanvas = {
+        clear: vi.fn(),
+        backgroundColor: "",
+        add: vi.fn(),
+        renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]),
+      };
+
+      const props = {
+        layout: "grid" as const,
+        columns: 2,
+        rows: 2,
+        gap: 10,
+        images: [],
+      };
+
+      // Use a mock loader that returns empty
+      const mockLoader = async () => {
+        throw new Error("Should not be called");
+      };
+
+      const result = await addCollageToCanvas(mockCanvas as any, props, 800, 600, mockLoader);
+      expect(result).toEqual([]);
+    });
+
+    it("should add collage with grid layout and mock loader", async () => {
+      const mockFabricImage = {
+        width: 100,
+        height: 100,
+        set: vi.fn().mockReturnThis(),
+        scale: vi.fn().mockReturnThis(),
+        getElement: vi.fn().mockReturnValue({
+          naturalWidth: 100,
+          naturalHeight: 100,
+          complete: true,
+        }),
+      } as any as FabricImage;
+      
+      const mockLoader = vi.fn().mockResolvedValue(mockFabricImage);
+      
+      const mockCanvas = {
+        clear: vi.fn(),
+        backgroundColor: "",
+        add: vi.fn(),
+        renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]),
+      };
+
+      const props = {
+        layout: "grid" as const,
+        columns: 2,
+        rows: 2,
+        gap: 10,
+        images: ["data:image/png;base64,test1"],
+      };
+
+      await addCollageToCanvas(mockCanvas as any, props, 800, 600, mockLoader);
+      
+      expect(mockCanvas.clear).toHaveBeenCalled();
+      expect(mockCanvas.backgroundColor).toBe("#ffffff");
+      expect(mockCanvas.add).toHaveBeenCalled();
+      expect(mockLoader).toHaveBeenCalledWith("data:image/png;base64,test1");
+    });
+
+    it("should add collage with free layout and mock loader", async () => {
+      const mockFabricImage = {
+        width: 100,
+        height: 100,
+        set: vi.fn().mockReturnThis(),
+        scale: vi.fn().mockReturnThis(),
+        getElement: vi.fn().mockReturnValue({
+          naturalWidth: 100,
+          naturalHeight: 100,
+          complete: true,
+        }),
+      } as any as FabricImage;
+      
+      const mockLoader = vi.fn().mockResolvedValue(mockFabricImage);
+      
+      const mockCanvas = {
+        clear: vi.fn(),
+        backgroundColor: "",
+        add: vi.fn(),
+        renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]),
+      };
+
+      const props = {
+        layout: "自由" as const,
+        columns: 2,
+        rows: 2,
+        gap: 10,
+        images: ["data:image/png;base64,test1", "data:image/png;base64,test2"],
+      };
+
+      await addCollageToCanvas(mockCanvas as any, props, 800, 600, mockLoader);
+      
+      expect(mockCanvas.clear).toHaveBeenCalled();
+      expect(mockCanvas.backgroundColor).toBe("#ffffff");
+      expect(mockCanvas.add).toHaveBeenCalled();
+      expect(mockLoader).toHaveBeenCalledWith("data:image/png;base64,test1");
+    });
+
+    it("should handle free layout with some images failing to load", async () => {
+      const mockFabricImage = {
+        width: 100,
+        height: 100,
+        set: vi.fn().mockReturnThis(),
+        scale: vi.fn().mockReturnThis(),
+        getElement: vi.fn().mockReturnValue({
+          naturalWidth: 100,
+          naturalHeight: 100,
+          complete: true,
+        }),
+      } as any as FabricImage;
+      
+      // First call succeeds, second fails
+      const mockLoader = vi.fn()
+        .mockResolvedValueOnce(mockFabricImage)
+        .mockRejectedValueOnce(new Error("Load failed"));
+      
+      const mockCanvas = {
+        clear: vi.fn(),
+        backgroundColor: "",
+        add: vi.fn(),
+        renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]),
+      };
+
+      const props = {
+        layout: "自由" as const,
+        columns: 2,
+        rows: 2,
+        gap: 10,
+        images: ["data:image/png;base64,test1", "data:image/png;base64,test2"],
+      };
+
+      await addCollageToCanvas(mockCanvas as any, props, 800, 600, mockLoader);
+      
+      // Should have called renderAll even with error
+      expect(mockCanvas.renderAll).toHaveBeenCalled();
+    });
+
+    it("should handle collage with valid images", async () => {
+      const mockFabricImage = {
+        width: 100,
+        height: 100,
+        set: vi.fn().mockReturnThis(),
+        scale: vi.fn().mockReturnThis(),
+        getElement: vi.fn().mockReturnValue({
+          naturalWidth: 100,
+          naturalHeight: 100,
+          complete: true,
+        }),
+      } as any as FabricImage;
+      
+      const mockLoader = vi.fn().mockResolvedValue(mockFabricImage);
+      
+      const mockCanvas = {
+        clear: vi.fn(),
+        backgroundColor: "",
+        add: vi.fn(),
+        renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]),
+      };
+
+      // Test with multiple valid images
+      const props = {
+        layout: "grid" as const,
+        columns: 2,
+        rows: 2,
+        gap: 10,
+        images: [
+          "data:image/png;base64,test1",
+          "data:image/png;base64,test2", 
+        ],
+      };
+
+      await addCollageToCanvas(mockCanvas as any, props, 800, 600, mockLoader);
+      
+      expect(mockLoader).toHaveBeenCalledTimes(2);
+    });
+
+    it("should handle image loader error gracefully", async () => {
+      const mockLoader = vi.fn().mockRejectedValue(new Error("Network error"));
+      
+      const mockCanvas = {
+        clear: vi.fn(),
+        backgroundColor: "",
+        add: vi.fn(),
+        renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]),
+      };
+
+      const props = {
+        layout: "grid" as const,
+        columns: 2,
+        rows: 2,
+        gap: 10,
+        images: ["data:image/png;base64,test1"],
+      };
+
+      // Should not throw, should return empty array when all images fail
+      await addCollageToCanvas(mockCanvas as any, props, 800, 600, mockLoader);
+      
+      // Should have called renderAll even with error
+      expect(mockCanvas.renderAll).toHaveBeenCalled();
+    });
+
+    it("should handle collage with valid images", async () => {
+      const mockFabricImage = {
+        width: 100,
+        height: 100,
+        set: vi.fn().mockReturnThis(),
+        scale: vi.fn().mockReturnThis(),
+        getElement: vi.fn().mockReturnValue({
+          naturalWidth: 100,
+          naturalHeight: 100,
+          complete: true,
+        }),
+      } as any as FabricImage;
+      
+      const mockLoader = vi.fn().mockResolvedValue(mockFabricImage);
+      
+      const mockCanvas = {
+        clear: vi.fn(),
+        backgroundColor: "",
+        add: vi.fn(),
+        renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]),
+      };
+
+      // Test with multiple valid images
+      const props = {
+        layout: "grid" as const,
+        columns: 2,
+        rows: 2,
+        gap: 10,
+        images: [
+          "data:image/png;base64,test1",
+          "data:image/png;base64,test2", 
+        ],
+      };
+
+      await addCollageToCanvas(mockCanvas as any, props, 800, 600, mockLoader);
+      
+      expect(mockLoader).toHaveBeenCalledTimes(2);
+    });
+
+    it("should handle image loader error gracefully", async () => {
+      const mockLoader = vi.fn().mockRejectedValue(new Error("Network error"));
+      
+      const mockCanvas = {
+        clear: vi.fn(),
+        backgroundColor: "",
+        add: vi.fn(),
+        renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]),
+      };
+
+      const props = {
+        layout: "grid" as const,
+        columns: 2,
+        rows: 2,
+        gap: 10,
+        images: ["data:image/png;base64,test1"],
+      };
+
+      // Should not throw, should return empty array when all images fail
+      await addCollageToCanvas(mockCanvas as any, props, 800, 600, mockLoader);
+      
+      expect(mockCanvas.clear).toHaveBeenCalled();
+      expect(mockCanvas.renderAll).toHaveBeenCalled();
+    });
+  });
+
+  describe("defaultImageLoader", () => {
+    it("should load image successfully using FabricImage.fromURL", async () => {
+      const mockFabricImg = {
+        width: 100,
+        height: 100,
+      } as unknown as FabricImage;
+      
+      const { FabricImage } = await import("fabric");
+      (FabricImage.fromURL as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockFabricImg);
+      
+      const result = await defaultImageLoader("data:image/png;base64,test");
+      
+      expect(FabricImage.fromURL).toHaveBeenCalledWith("data:image/png;base64,test", { crossOrigin: "anonymous" });
+      expect(result).toBe(mockFabricImg);
+    });
+
+    it("should reject when FabricImage.fromURL returns null", async () => {
+      const { FabricImage } = await import("fabric");
+      (FabricImage.fromURL as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+      
+      await expect(defaultImageLoader("data:image/png;base64,invalid")).rejects.toThrow("Failed to load image");
+    });
+
+    it("should reject when FabricImage.fromURL throws", async () => {
+      const { FabricImage } = await import("fabric");
+      (FabricImage.fromURL as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Network error"));
+      
+      await expect(defaultImageLoader("data:image/png;base64,invalid")).rejects.toThrow("Network error");
+    });
+  });
+
+  describe("loadImageWithOrientation", () => {
+    it("should call defaultImageLoader", async () => {
+      const mockFabricImg = {
+        width: 100,
+        height: 100,
+      } as unknown as FabricImage;
+      
+      const { FabricImage } = await import("fabric");
+      (FabricImage.fromURL as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockFabricImg);
+      
+      const result = await loadImageWithOrientation("data:image/png;base64,test");
+      
+      expect(FabricImage.fromURL).toHaveBeenCalledWith("data:image/png;base64,test", { crossOrigin: "anonymous" });
+      expect(result).toBe(mockFabricImg);
+    });
+  });
+
+  describe("createFilter", () => {
+    it("should create sepia filter", () => {
+      const filter = createFilter("sepia", 50);
+      expect(filter).toBeDefined();
+    });
+
+    it("should return null for unknown filter type", () => {
+      const filter = createFilter("unknown", 50);
+      expect(filter).toBeNull();
     });
   });
 });

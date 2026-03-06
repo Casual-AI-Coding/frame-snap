@@ -11,6 +11,7 @@ import type {
   HistoryState,
   WatermarkPosition,
 } from "@/types";
+import type { ExifData } from "@/utils/exif";
 
 const MAX_HISTORY = 50;
 
@@ -18,6 +19,7 @@ export const useEditorStore = defineStore("editor", () => {
   // State
   const image = ref<string | null>(null);
   const originalImageSize = ref<{ width: number; height: number } | null>(null);
+  const exifData = ref<ExifData | null>(null);
   const layers = ref<Layer[]>([]);
   const activeLayerId = ref<string | null>(null);
   const zoom = ref(1);
@@ -56,15 +58,20 @@ export const useEditorStore = defineStore("editor", () => {
     }
   }
 
-  function setImage(src: string, width: number, height: number) {
+  function setImage(src: string, width: number, height: number, exif?: ExifData | null) {
     image.value = src;
     originalImageSize.value = { width, height };
+    exifData.value = exif || null;
     canvasSize.value = { width, height };
     layers.value = [];
     activeLayerId.value = null;
     history.value = [];
     historyIndex.value = -1;
     saveToHistory();
+  }
+
+  function setExifData(exif: ExifData | null) {
+    exifData.value = exif;
   }
 
   function addImageLayer(props: Partial<ImageLayerProps> = {}) {
